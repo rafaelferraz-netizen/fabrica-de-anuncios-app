@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus, ImageIcon, CheckCircle2 } from "lucide-react";
+import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus, ImageIcon, CheckCircle2, UserCircle } from "lucide-react";
 import type { DashboardSnapshot } from "@/lib/types";
 import { StatCard } from "./StatCard";
 import { JobCard } from "./JobCard";
@@ -213,15 +213,17 @@ export function Dashboard({ initialData }: Props) {
                     </div>
 
                     <div className="field">
-                      <label className="flex items-center gap-2"><ShieldCheck size={14} className="text-[var(--accent)]" /> Público & Ângulo</label>
-                      <div className="grid grid-cols-1 gap-2">
-                        <select value={briefingForm.targetAudience} onChange={e => setBriefingForm({...briefingForm, targetAudience: e.target.value})}>
-                          {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
-                        </select>
-                        <select value={briefingForm.creativeAngle} onChange={e => setBriefingForm({...briefingForm, creativeAngle: e.target.value})}>
-                          {ANGLES.map(a => <option key={a} value={a}>{a}</option>)}
-                        </select>
-                      </div>
+                      <label className="flex items-center gap-2"><UserCircle size={14} className="text-[var(--accent)]" /> Público Alvo</label>
+                      <select value={briefingForm.targetAudience} onChange={e => setBriefingForm({...briefingForm, targetAudience: e.target.value})}>
+                        {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="field">
+                      <label className="flex items-center gap-2"><ShieldCheck size={14} className="text-[var(--accent)]" /> Ângulo Criativo</label>
+                      <select value={briefingForm.creativeAngle} onChange={e => setBriefingForm({...briefingForm, creativeAngle: e.target.value})}>
+                        {ANGLES.map(a => <option key={a} value={a}>{a}</option>)}
+                      </select>
                     </div>
 
                     <div className="field">
