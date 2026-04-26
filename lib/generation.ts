@@ -94,29 +94,38 @@ async function buildCreativePlan(input: GenerationInput): Promise<CreativePlan> 
   });
 }
 
-async function generateImageB64(prompt: string, format: string): Promise<string> {
-  const response = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getOpenAiKey()}`
-    },
-    body: JSON.stringify({
-      model: "gpt-image-2",
-      prompt,
-      size: sizeFromFormat(format)
-    })
-  });
-  const payload = await response.json();
-  if (!response.ok) {
-    throw new Error(payload?.error?.message ?? "Falha ao gerar imagem.");
+async function generateImageB64(prompt: string, format: string): Promise<{ b64: string; model: string }> {
+  const models = ["gpt-image-2", "gpt-image-1"];
+  let lastError = "Falha ao gerar imagem.";
+
+  for (const model of models) {
+    const response = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getOpenAiKey()}`
+      },
+      body: JSON.stringify({
+        model,
+        prompt,
+        size: sizeFromFormat(format)
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      lastError = payload?.error?.message ?? lastError;
+      continue;
+    }
+
+    const b64 = payload?.data?.[0]?.b64_json;
+    if (!b64) {
+      lastError = "A OpenAI não retornou imagem em base64.";
+      continue;
+    }
+    return { b64, model };
   }
 
-  const b64 = payload?.data?.[0]?.b64_json;
-  if (!b64) {
-    throw new Error("A OpenAI não retornou imagem em base64.");
-  }
-  return b64;
+  throw new Error(lastError);
 }
 
 async function ensureBucket() {
@@ -151,8 +160,11 @@ async function uploadImage(jobId: string, b64: string) {
 
 export async function runGenerationJobOnline(input: GenerationInput) {
   const plan = await buildCreativePlan(input);
-  const imageB64 = await generateImageB64(plan.imagePrompt, input.briefing.format);
-  const imageUrl = await uploadImage(input.jobId, imageB64);
+  const imageResult = await generateImageB64(plan.imagePrompt, input.briefing.format);
+  const imageUrl = await uploadImage(input.jobId, imageResult.b64);
+  const summary =
+    `Geração concluída. Headline: ${plan.headline}. ` +
+    `CTA: ${plan.cta}. Modelo: ${imageResult.model}. Imagem: ${imageUrl}`;
 
   return {
     headline: plan.headline,
@@ -160,8 +172,16 @@ export async function runGenerationJobOnline(input: GenerationInput) {
     cta: plan.cta,
     angle: plan.angle,
     imageUrl,
-    summary:
-      `Geração concluída. Headline: ${plan.headline}. ` +
-      `CTA: ${plan.cta}. Imagem: ${imageUrl}`
+    imageModel: imageResult.model,
+    summary,
+    outputSummary: JSON.stringify({
+      summary,
+      headline: plan.headline,
+      subheadline: plan.subheadline,
+      cta: plan.cta,
+      angle: plan.angle,
+      imageUrl,
+      imageModel: imageResult.model
+    })
   };
 }

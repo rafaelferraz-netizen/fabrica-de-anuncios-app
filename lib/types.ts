@@ -25,6 +25,12 @@ export type GenerationJobRecord = {
   briefingId: string;
   status: "queued" | "running" | "approved" | "rejected";
   outputSummary?: string;
+  headline?: string;
+  subheadline?: string;
+  cta?: string;
+  angle?: string;
+  imageUrl?: string;
+  imageModel?: string;
   createdAt: string;
 };
 
