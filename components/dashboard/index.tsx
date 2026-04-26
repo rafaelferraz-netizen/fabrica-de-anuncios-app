@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, LayoutDashboard, Users, History, Target, ShieldCheck, Zap, Briefcase, Plus } from "lucide-react";
-import type { DashboardSnapshot, ClientRecord } from "@/lib/types";
+import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus } from "lucide-react";
+import type { DashboardSnapshot } from "@/lib/types";
 import { StatCard } from "./StatCard";
 import { JobCard } from "./JobCard";
 import { ImageModal } from "./ImageModal";
@@ -24,6 +24,15 @@ const PLACEMENTS = {
 } as const;
 
 type PlacementKey = keyof typeof PLACEMENTS;
+
+async function uploadAsset(file: File, folder: string) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", folder);
+  const response = await fetch("/api/uploads", { method: "POST", body: form });
+  if (!response.ok) throw new Error(await response.text());
+  return response.json() as Promise<{ url: string }>;
+}
 
 export function Dashboard({ initialData }: Props) {
   const [data, setData] = useState(initialData);
@@ -94,9 +103,9 @@ export function Dashboard({ initialData }: Props) {
         <div className="sidebar-header">
           <div className="flex items-center gap-2 text-white mb-2">
             <Briefcase className="text-[var(--accent)]" size={24} />
-            <span className="font-serif font-bold text-xl tracking-tight">AD FACTORY</span>
+            <span className="font-serif font-bold text-xl tracking-tight">FÁBRICA DE ANÚNCIOS</span>
           </div>
-          <div className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold">V4 Performance Lab</div>
+          <div className="text-[10px] uppercase tracking-widest text-[#52525b] font-bold">Barbosa Souza & Co | V4 Company</div>
         </div>
 
         <nav className="sidebar-nav">
@@ -120,7 +129,7 @@ export function Dashboard({ initialData }: Props) {
 
           <div 
             className="nav-item mt-4 border border-dashed border-[#27272a] hover:border-[var(--accent)]"
-            onClick={() => setActiveView('general')}
+            onClick={() => { setActiveView('general'); setSelectedClientId(null); }}
           >
             <Plus size={18} /> Adicionar Marca
           </div>
@@ -133,11 +142,12 @@ export function Dashboard({ initialData }: Props) {
             <header className="flex justify-between items-end border-b border-[var(--line)] pb-8">
               <div>
                 <div className="eyebrow">Dashboard Global</div>
-                <h1 className="text-5xl font-serif font-bold">Fábrica de Anúncios</h1>
+                <h1 className="text-5xl font-serif font-bold">Barbosa Souza & Co</h1>
+                <p className="text-[var(--muted)] mt-2 italic">Fábrica de Anúncios de Alta Performance</p>
               </div>
               <div className="flex gap-4">
-                <StatCard label="Ativos" value={data.jobs.filter(j => j.status === 'running').length} />
-                <StatCard label="Reviews" value={data.reviews.length} />
+                <StatCard label="Em Produção" value={data.jobs.filter(j => j.status === 'running').length} />
+                <StatCard label="Marcas Ativas" value={data.clients.length} />
               </div>
             </header>
 
@@ -151,7 +161,7 @@ export function Dashboard({ initialData }: Props) {
                     <input 
                       value={clientForm.name} 
                       onChange={e => setClientForm({...clientForm, name: e.target.value})} 
-                      placeholder="Ex: Nike Brasil"
+                      placeholder="Ex: Spy Eyewear"
                     />
                   </div>
                   <button 
@@ -168,10 +178,10 @@ export function Dashboard({ initialData }: Props) {
                 </section>
 
                 <section className="panel">
-                  <div className="eyebrow">Novo Job</div>
+                  <div className="eyebrow">Briefing Estratégico Completo</div>
                   <div className="space-y-6">
                     <div className="field">
-                      <label>Selecionar Cliente</label>
+                      <label>Cliente</label>
                       <select 
                         value={briefingForm.clientId} 
                         onChange={e => setBriefingForm({...briefingForm, clientId: e.target.value})}
@@ -202,16 +212,49 @@ export function Dashboard({ initialData }: Props) {
                       </select>
                     </div>
 
+                    <div className="field">
+                      <label className="flex items-center gap-2"><ShieldCheck size={14} className="text-[var(--accent)]" /> Público & Ângulo</label>
+                      <div className="grid grid-cols-1 gap-2">
+                        <select value={briefingForm.targetAudience} onChange={e => setBriefingForm({...briefingForm, targetAudience: e.target.value})}>
+                          {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                        <select value={briefingForm.creativeAngle} onChange={e => setBriefingForm({...briefingForm, creativeAngle: e.target.value})}>
+                          {ANGLES.map(a => <option key={a} value={a}>{a}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="field">
+                      <label className="flex items-center gap-2"><Zap size={14} className="text-[var(--accent)]" /> Voz da Marca</label>
+                      <select value={briefingForm.brandVoice} onChange={e => setBriefingForm({...briefingForm, brandVoice: e.target.value})}>
+                        {VOICES.map(v => <option key={v} value={v}>{v}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="field">
+                      <label>Assets</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button className={`dropzone ${briefingForm.productImageUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-p')?.click()}>
+                          {briefingForm.productImageUrl ? "Foto OK" : "+ Foto Produto"}
+                        </button>
+                        <button className={`dropzone ${briefingForm.referenceAdUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-r')?.click()}>
+                          {briefingForm.referenceAdUrl ? "Ref OK" : "+ Referência"}
+                        </button>
+                        <input id="up-p" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'product-images'); setBriefingForm({...briefingForm, productImageUrl: r.url}); }}} />
+                        <input id="up-r" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'reference-ads'); setBriefingForm({...briefingForm, referenceAdUrl: r.url}); }}} />
+                      </div>
+                    </div>
+
                     <button 
                       className="button w-full" 
                       disabled={pending || !briefingForm.productName}
                       onClick={async () => {
                         await postJson("/api/briefings", briefingForm);
-                        setBriefingForm({...briefingForm, productName: ""});
+                        setBriefingForm(prev => ({ ...prev, productName: "", productImageUrl: "", referenceAdUrl: "" }));
                         refreshSnapshot();
                       }}
                     >
-                      Disparar Geração
+                      Disparar Geração V4
                     </button>
                   </div>
                 </section>
