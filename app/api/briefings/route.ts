@@ -34,8 +34,10 @@ export async function POST(request: NextRequest) {
         jobId: result.job.id,
         status: "running",
         outputSummary:
-          generationPayload.summary ??
-          "Geração concluída. Revise o job para aprovar ou reprovar."
+          generationPayload.outputSummary ??
+          JSON.stringify({
+            summary: generationPayload.summary ?? "Geração concluída. Revise o job para aprovar ou reprovar."
+          })
       });
 
       return NextResponse.json({
@@ -43,23 +45,19 @@ export async function POST(request: NextRequest) {
         generation: generationPayload
       });
     } catch (generationError) {
+      const errorMessage =
+        generationError instanceof Error ? generationError.message : "Falha ao conectar o app ao motor de geração.";
+
       await updateGenerationJob({
         jobId: result.job.id,
         status: "rejected",
-        outputSummary:
-          generationError instanceof Error
-            ? generationError.message
-            : "Falha ao conectar o app ao motor Python."
+        outputSummary: errorMessage
       });
-      return NextResponse.json(
-        {
-          ...result,
-          error:
-            generationError instanceof Error
-              ? generationError.message
-              : "Falha ao conectar o app ao motor Python."
-        }
-      );
+
+      return NextResponse.json({
+        ...result,
+        error: errorMessage
+      });
     }
   } catch (error) {
     return NextResponse.json(

@@ -88,7 +88,7 @@ export async function createDemoBriefing(input: {
     id: randomUUID(),
     briefingId: briefing.id,
     status: "queued",
-    outputSummary: "Fila criada. Integração com o motor Python será conectada na próxima etapa.",
+    outputSummary: "Fila criada. Integração com o motor de geração já pode ser conectada aqui.",
     createdAt: new Date().toISOString()
   };
   data.briefings.unshift(briefing);
@@ -117,8 +117,7 @@ export async function createDemoReview(input: {
     job.id === input.jobId
       ? {
           ...job,
-          status: input.status,
-          outputSummary: input.feedback || job.outputSummary
+          status: input.status
         }
       : job
   );

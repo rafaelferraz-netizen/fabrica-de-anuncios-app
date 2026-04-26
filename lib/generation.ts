@@ -162,6 +162,9 @@ export async function runGenerationJobOnline(input: GenerationInput) {
   const plan = await buildCreativePlan(input);
   const imageResult = await generateImageB64(plan.imagePrompt, input.briefing.format);
   const imageUrl = await uploadImage(input.jobId, imageResult.b64);
+  const summary =
+    `Geração concluída. Headline: ${plan.headline}. ` +
+    `CTA: ${plan.cta}. Modelo: ${imageResult.model}. Imagem: ${imageUrl}`;
 
   return {
     headline: plan.headline,
@@ -170,8 +173,15 @@ export async function runGenerationJobOnline(input: GenerationInput) {
     angle: plan.angle,
     imageUrl,
     imageModel: imageResult.model,
-    summary:
-      `Geração concluída. Headline: ${plan.headline}. ` +
-      `CTA: ${plan.cta}. Modelo: ${imageResult.model}. Imagem: ${imageUrl}`
+    summary,
+    outputSummary: JSON.stringify({
+      summary,
+      headline: plan.headline,
+      subheadline: plan.subheadline,
+      cta: plan.cta,
+      angle: plan.angle,
+      imageUrl,
+      imageModel: imageResult.model
+    })
   };
 }

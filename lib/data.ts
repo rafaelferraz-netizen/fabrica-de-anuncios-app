@@ -3,9 +3,42 @@ import { randomUUID } from "node:crypto";
 import { createDemoBriefing, createDemoClient, createDemoReview, getDemoSnapshot } from "./demo-store";
 import { isDemoMode } from "./env";
 import { getSupabaseAdmin } from "./supabase";
-import type { DashboardSnapshot, ReviewRecord } from "./types";
+import type { DashboardSnapshot, GenerationJobRecord, ReviewRecord } from "./types";
 
 type JobStatus = "queued" | "running" | "approved" | "rejected";
+
+function parseJobOutputSummary(outputSummary?: string | null): Pick<
+  GenerationJobRecord,
+  "outputSummary" | "headline" | "subheadline" | "cta" | "angle" | "imageUrl" | "imageModel"
+> {
+  if (!outputSummary) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(outputSummary) as {
+      summary?: string;
+      headline?: string;
+      subheadline?: string;
+      cta?: string;
+      angle?: string;
+      imageUrl?: string;
+      imageModel?: string;
+    };
+
+    return {
+      outputSummary: parsed.summary ?? outputSummary,
+      headline: parsed.headline,
+      subheadline: parsed.subheadline,
+      cta: parsed.cta,
+      angle: parsed.angle,
+      imageUrl: parsed.imageUrl,
+      imageModel: parsed.imageModel
+    };
+  } catch {
+    return { outputSummary };
+  }
+}
 
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   if (isDemoMode()) {
@@ -46,7 +79,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       id: row.id,
       briefingId: row.briefing_id,
       status: row.status,
-      outputSummary: row.output_summary ?? undefined,
+      ...parseJobOutputSummary(row.output_summary ?? undefined),
       createdAt: row.created_at
     })),
     reviews: (reviews.data ?? []).map((row) => ({
@@ -189,7 +222,7 @@ export async function createBriefingRecord(input: {
       id: job.id,
       briefingId: job.briefing_id,
       status: job.status,
-      outputSummary: job.output_summary ?? undefined,
+      ...parseJobOutputSummary(job.output_summary ?? undefined),
       createdAt: job.created_at
     }
   };
@@ -242,7 +275,7 @@ export async function createReviewRecord(input: {
   }
   await supabase
     .from("generation_jobs")
-    .update({ status: input.status, output_summary: input.feedback || null })
+    .update({ status: input.status })
     .eq("id", input.jobId);
 
   return {
