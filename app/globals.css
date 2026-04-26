@@ -18,7 +18,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: 'Inter', sans-serif;
-  overflow: hidden; /* O scroll será interno no conteúdo */
+  overflow: hidden;
 }
 
 .app-container {
@@ -88,7 +88,6 @@ body {
   font-weight: 700;
 }
 
-/* Reutilizando e refinando grids existentes */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 400px 1fr;
@@ -100,7 +99,6 @@ body {
   .dashboard-grid { grid-template-columns: 1fr; }
 }
 
-/* Mantendo os estilos de painéis e inputs do usuário anterior */
 .panel {
   background: white;
   border: 1px solid var(--line);
@@ -144,6 +142,54 @@ input, select, textarea {
   cursor: pointer;
   border: none;
   font-size: 13px;
+  transition: background 0.2s;
 }
 
 .button:hover { background: var(--accent); }
+
+/* Estilo refinado para os botões de upload/dropzone */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border: 2px dashed var(--line);
+  background: #fafafa;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.dropzone:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dropzone.filled {
+  border-color: var(--ink);
+  border-style: solid;
+  background: #f0f0f0;
+  color: var(--ink);
+}
+
+.dropzone-icon {
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.dropzone:hover .dropzone-icon {
+  opacity: 1;
+}
+
+.dropzone.filled .dropzone-icon {
+  opacity: 1;
+  color: #10b981; /* Sucesso */
+}

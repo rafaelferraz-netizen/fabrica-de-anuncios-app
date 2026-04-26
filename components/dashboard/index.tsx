@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus } from "lucide-react";
+import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus, ImageIcon, CheckCircle2 } from "lucide-react";
 import type { DashboardSnapshot } from "@/lib/types";
 import { StatCard } from "./StatCard";
 import { JobCard } from "./JobCard";
@@ -232,14 +232,22 @@ export function Dashboard({ initialData }: Props) {
                     </div>
 
                     <div className="field">
-                      <label>Assets</label>
+                      <label>Assets Estratégicos</label>
                       <div className="grid grid-cols-2 gap-2">
-                        <button className={`dropzone ${briefingForm.productImageUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-p')?.click()}>
-                          {briefingForm.productImageUrl ? "Foto OK" : "+ Foto Produto"}
-                        </button>
-                        <button className={`dropzone ${briefingForm.referenceAdUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-r')?.click()}>
-                          {briefingForm.referenceAdUrl ? "Ref OK" : "+ Referência"}
-                        </button>
+                        <div 
+                          className={`dropzone ${briefingForm.productImageUrl ? 'filled' : ''}`} 
+                          onClick={() => document.getElementById('up-p')?.click()}
+                        >
+                          {briefingForm.productImageUrl ? <CheckCircle2 className="dropzone-icon" size={18} /> : <ImageIcon className="dropzone-icon" size={18} />}
+                          <span>{briefingForm.productImageUrl ? "Produto OK" : "Foto Produto"}</span>
+                        </div>
+                        <div 
+                          className={`dropzone ${briefingForm.referenceAdUrl ? 'filled' : ''}`} 
+                          onClick={() => document.getElementById('up-r')?.click()}
+                        >
+                          {briefingForm.referenceAdUrl ? <CheckCircle2 className="dropzone-icon" size={18} /> : <ImageIcon className="dropzone-icon" size={18} />}
+                          <span>{briefingForm.referenceAdUrl ? "Ref OK" : "Referência"}</span>
+                        </div>
                         <input id="up-p" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'product-images'); setBriefingForm({...briefingForm, productImageUrl: r.url}); }}} />
                         <input id="up-r" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'reference-ads'); setBriefingForm({...briefingForm, referenceAdUrl: r.url}); }}} />
                       </div>
