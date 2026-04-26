@@ -11,11 +11,21 @@ type Props = { initialData: DashboardSnapshot };
 
 const CLIENT_SEGMENTS = ["Moda", "Beleza", "Estética", "Saúde", "E-commerce", "Infoproduto", "Serviço local", "Outro"] as const;
 const BRAND_TONES = ["Premium", "Popular", "Confiável", "Ousado", "Clean", "Técnico"] as const;
-const PLATFORMS = ["Instagram Feed", "Instagram Stories", "Facebook Feed", "LinkedIn", "TikTok"] as const;
-const FORMATS = ["1:1 (1080x1080px)", "4:5 (1080x1350px)", "9:16 (1080x1920px)"] as const;
 const AD_TYPES = ["static", "carousel"] as const;
 const OBJECTIVES = ["Reconhecimento", "Engajamento", "Leads", "Conversão", "Remarketing"] as const;
 const FUNNEL_STAGES = ["Topo", "Meio", "Fundo"] as const;
+
+// Mapeamento inteligente de Posicionamento (Plataforma + Formato)
+const PLACEMENTS = {
+  "Instagram Feed (4:5)": { platform: "Instagram", format: "4:5 (1080x1350px)" },
+  "Instagram Stories (9:16)": { platform: "Instagram", format: "9:16 (1080x1920px)" },
+  "Instagram Square (1:1)": { platform: "Instagram", format: "1:1 (1080x1080px)" },
+  "Facebook Feed (1:1)": { platform: "Facebook", format: "1:1 (1080x1080px)" },
+  "TikTok Ads (9:16)": { platform: "TikTok", format: "9:16 (1080x1920px)" },
+  "LinkedIn Post (1:1)": { platform: "LinkedIn", format: "1:1 (1080x1080px)" },
+} as const;
+
+type PlacementKey = keyof typeof PLACEMENTS;
 
 async function postJson(path: string, body: unknown) {
   const response = await fetch(path, {
@@ -42,17 +52,31 @@ export function Dashboard({ initialData }: Props) {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [clientForm, setClientForm] = useState({ name: "", segment: CLIENT_SEGMENTS[0], brandTone: BRAND_TONES[0] });
+  
+  const [selectedPlacement, setSelectedPlacement] = useState<PlacementKey>("Instagram Feed (4:5)");
+  
   const [briefingForm, setBriefingForm] = useState({
     clientId: initialData.clients[0]?.id ?? "",
     productName: "",
-    platform: PLATFORMS[0],
-    format: FORMATS[1],
+    platform: PLACEMENTS["Instagram Feed (4:5)"].platform,
+    format: PLACEMENTS["Instagram Feed (4:5)"].format,
     adType: AD_TYPES[0],
     objective: OBJECTIVES[2],
     funnelStage: FUNNEL_STAGES[0],
     productImageUrl: "",
     referenceAdUrl: ""
   });
+
+  const handlePlacementChange = (key: PlacementKey) => {
+    setSelectedPlacement(key);
+    const config = PLACEMENTS[key];
+    setBriefingForm(prev => ({
+      ...prev,
+      platform: config.platform,
+      format: config.format
+    }));
+  };
+
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, { feedback: string; tags: string[] }>>({});
 
   const refreshSnapshot = async () => {
@@ -123,17 +147,20 @@ export function Dashboard({ initialData }: Props) {
               <label>Produto</label>
               <input value={briefingForm.productName} onChange={e => setBriefingForm({...briefingForm, productName: e.target.value})} />
             </div>
+            
             <div className="field">
-              <label>Plataforma & Formato</label>
-              <div className="grid grid-cols-2 gap-2">
-                <select value={briefingForm.platform} onChange={e => setBriefingForm({...briefingForm, platform: e.target.value as any})}>
-                  {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <select value={briefingForm.format} onChange={e => setBriefingForm({...briefingForm, format: e.target.value as any})}>
-                  {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
-              </div>
+              <label>Posicionamento (Canal & Formato)</label>
+              <select 
+                value={selectedPlacement} 
+                onChange={e => handlePlacementChange(e.target.value as PlacementKey)}
+                className="font-bold border-2 border-[var(--ink)]"
+              >
+                {(Object.keys(PLACEMENTS) as PlacementKey[]).map(key => (
+                  <option key={key} value={key}>{key}</option>
+                ))}
+              </select>
             </div>
+
             <div className="field">
               <label>Assets (Upload)</label>
               <div className="grid grid-cols-2 gap-2">
@@ -141,7 +168,7 @@ export function Dashboard({ initialData }: Props) {
                   {briefingForm.productImageUrl ? (
                     <div className="flex flex-col items-center gap-1">
                       <img src={briefingForm.productImageUrl} className="w-10 h-10 object-cover rounded" />
-                      <span className="text-[10px] font-bold text-[var(--accent)]">Clique para Trocar</span>
+                      <span className="text-[10px] font-bold text-[var(--accent)]">Trocar</span>
                     </div>
                   ) : "+ Foto Produto"}
                 </button>
@@ -162,6 +189,7 @@ export function Dashboard({ initialData }: Props) {
         </div>
 
         <div className="stack">
+          {/* ... resto do componente ... */}
           <section className="panel">
             <div className="flex justify-between items-center mb-6 border-b border-[var(--line)] pb-4">
               <div className="eyebrow m-0">Fila de Produção</div>
