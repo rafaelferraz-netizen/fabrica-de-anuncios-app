@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, History, Maximize2, Download } from "lucide-react";
 import type { DashboardSnapshot } from "@/lib/types";
 import { StatCard } from "./StatCard";
 import { JobCard } from "./JobCard";
+import { ImageModal } from "./ImageModal";
 
 type Props = { initialData: DashboardSnapshot };
 
@@ -38,6 +39,7 @@ async function uploadAsset(file: File, folder: string) {
 export function Dashboard({ initialData }: Props) {
   const [data, setData] = useState(initialData);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [clientForm, setClientForm] = useState({ name: "", segment: CLIENT_SEGMENTS[0], brandTone: BRAND_TONES[0] });
   const [briefingForm, setBriefingForm] = useState({
@@ -74,6 +76,8 @@ export function Dashboard({ initialData }: Props) {
 
   return (
     <div className="page-shell space-y-6">
+      {zoomedImage && <ImageModal url={zoomedImage} onClose={() => setZoomedImage(null)} />}
+      
       <header className="hero">
         <div>
           <div className="eyebrow">Fábrica de Anúncios</div>
@@ -134,10 +138,20 @@ export function Dashboard({ initialData }: Props) {
               <label>Assets (Upload)</label>
               <div className="grid grid-cols-2 gap-2">
                 <button className={`dropzone ${briefingForm.productImageUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-p')?.click()}>
-                  {briefingForm.productImageUrl ? "Produto OK" : "+ Foto Produto"}
+                  {briefingForm.productImageUrl ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <img src={briefingForm.productImageUrl} className="w-10 h-10 object-cover rounded" />
+                      <span className="text-[10px] font-bold text-[var(--accent)]">Clique para Trocar</span>
+                    </div>
+                  ) : "+ Foto Produto"}
                 </button>
                 <button className={`dropzone ${briefingForm.referenceAdUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-r')?.click()}>
-                  {briefingForm.referenceAdUrl ? "Ref OK" : "+ Referência"}
+                  {briefingForm.referenceAdUrl ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <img src={briefingForm.referenceAdUrl} className="w-10 h-10 object-cover rounded" />
+                      <span className="text-[10px] font-bold text-[var(--accent)]">Ref. OK</span>
+                    </div>
+                  ) : "+ Referência"}
                 </button>
                 <input id="up-p" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'product-images'); setBriefingForm({...briefingForm, productImageUrl: r.url}); }}} />
                 <input id="up-r" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'reference-ads'); setBriefingForm({...briefingForm, referenceAdUrl: r.url}); }}} />
@@ -167,23 +181,43 @@ export function Dashboard({ initialData }: Props) {
                   reviewDraft={reviewDrafts[job.id] ?? { feedback: "", tags: [] }}
                   onDraftChange={(id, n) => setReviewDrafts(p => ({ ...p, [id]: { ...(p[id] ?? { feedback: "", tags: [] }), ...n } }))}
                   isPending={pending}
+                  onZoom={(url) => setZoomedImage(url)}
                 />
               ))
             )}
           </section>
 
           <section className="panel">
-            <div className="eyebrow">Memória Recente</div>
+            <div className="flex justify-between items-center mb-6 border-b border-[var(--line)] pb-4">
+              <div className="eyebrow m-0">Histórico de Performance</div>
+              <History size={14} className="text-[var(--muted)]" />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.reviews.map(review => (
-                <div key={review.id} className="p-4 border border-[var(--line)] bg-white/40">
-                  <div className="flex justify-between mb-2">
-                    <span className={`pill ${review.status === 'approved' ? 'success' : 'danger'}`}>{review.status}</span>
-                    <span className="text-[10px] text-[var(--muted)]">{new Date(review.createdAt).toLocaleDateString()}</span>
+              {data.reviews.map(review => {
+                const job = data.jobs.find(j => j.id === review.jobId);
+                return (
+                  <div key={review.id} className="p-4 border border-[var(--line)] bg-white/40 group relative">
+                    <div className="flex justify-between mb-3">
+                      <span className={`pill ${review.status === 'approved' ? 'success' : 'danger'}`}>{review.status}</span>
+                      <span className="text-[10px] text-[var(--muted)]">{new Date(review.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {job?.imageUrl && (
+                      <div className="relative aspect-video mb-3 overflow-hidden border border-[var(--line)]">
+                        <img src={job.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all cursor-pointer" onClick={() => setZoomedImage(job.imageUrl!)} />
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => setZoomedImage(job.imageUrl!)} className="bg-white p-1.5 shadow-md"><Maximize2 size={12} /></button>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-xs italic font-serif leading-relaxed mb-3">"{review.feedback || 'Sem comentários'}"</p>
+                    <div className="flex flex-wrap gap-1">
+                      {review.reasonTags.map(tag => (
+                        <span key={tag} className="text-[9px] uppercase tracking-tighter bg-gray-100 px-1">{tag}</span>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-sm italic font-serif">"{review.feedback || 'Sem comentários'}"</p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </div>
