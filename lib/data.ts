@@ -5,6 +5,8 @@ import { isDemoMode } from "./env";
 import { getSupabaseAdmin } from "./supabase";
 import type { DashboardSnapshot, ReviewRecord } from "./types";
 
+type JobStatus = "queued" | "running" | "approved" | "rejected";
+
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   if (isDemoMode()) {
     return getDemoSnapshot();
@@ -87,6 +89,26 @@ export async function createClientRecord(input: {
   };
 }
 
+export async function getClientRecordById(clientId: string) {
+  if (isDemoMode()) {
+    const snapshot = await getDemoSnapshot();
+    return snapshot.clients.find((client) => client.id === clientId) ?? null;
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("clients").select("*").eq("id", clientId).single();
+  if (error) {
+    throw error;
+  }
+  return {
+    id: data.id,
+    name: data.name,
+    segment: data.segment,
+    brandTone: data.brand_tone,
+    createdAt: data.created_at
+  };
+}
+
 export async function createBriefingRecord(input: {
   clientId: string;
   productName: string;
@@ -99,7 +121,15 @@ export async function createBriefingRecord(input: {
   referenceAdUrl?: string;
 }) {
   if (isDemoMode()) {
-    return createDemoBriefing(input);
+    const [result, client] = await Promise.all([
+      createDemoBriefing(input),
+      getClientRecordById(input.clientId)
+    ]);
+    return {
+      client,
+      briefing: result.briefing,
+      job: result.job
+    };
   }
 
   const supabase = getSupabaseAdmin();
@@ -141,6 +171,7 @@ export async function createBriefingRecord(input: {
   }
 
   return {
+    client: await getClientRecordById(briefing.client_id),
     briefing: {
       id: briefing.id,
       clientId: briefing.client_id,
@@ -162,6 +193,29 @@ export async function createBriefingRecord(input: {
       createdAt: job.created_at
     }
   };
+}
+
+export async function updateGenerationJob(input: {
+  jobId: string;
+  status: JobStatus;
+  outputSummary?: string;
+}) {
+  if (isDemoMode()) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("generation_jobs")
+    .update({
+      status: input.status,
+      output_summary: input.outputSummary ?? null
+    })
+    .eq("id", input.jobId);
+  if (error) {
+    throw error;
+  }
+  return true;
 }
 
 export async function createReviewRecord(input: {
