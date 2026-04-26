@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-
+import { 
+  PlusCircle, 
+  Users, 
+  ClipboardList, 
+  PlayCircle, 
+  CheckCircle2, 
+  LayoutDashboard,
+  ChevronRight,
+  Search
+} from "lucide-react";
 import type { DashboardSnapshot } from "@/lib/types";
+import { Button, Card, Input, Badge } from "./ui-base";
 
 type Props = {
   initialData: DashboardSnapshot;
@@ -14,38 +24,26 @@ async function postJson(path: string, body: unknown) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
-
-  if (!response.ok) {
-    throw new Error(await response.text());
-  }
-
+  if (!response.ok) throw new Error(await response.text());
   return response.json();
 }
 
 export function Dashboard({ initialData }: Props) {
   const [data, setData] = useState(initialData);
   const [pending, startTransition] = useTransition();
-  const [clientForm, setClientForm] = useState({
-    name: "",
-    segment: "",
-    brandTone: ""
-  });
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  const [clientForm, setClientForm] = useState({ name: "", segment: "", brandTone: "" });
   const [briefingForm, setBriefingForm] = useState({
-    clientId: initialData.clients[0]?.id ?? "",
+    clientId: "",
     productName: "",
     platform: "Instagram",
     format: "4:5 (1080x1350px)",
-    adType: "static",
+    adType: "static" as "static" | "carousel",
     objective: "",
     funnelStage: "",
     productImageUrl: "",
     referenceAdUrl: ""
-  });
-  const [reviewForm, setReviewForm] = useState({
-    jobId: initialData.jobs[0]?.id ?? "",
-    status: "approved",
-    feedback: "",
-    reasonTags: ""
   });
 
   function refreshSnapshot() {
@@ -53,370 +51,206 @@ export function Dashboard({ initialData }: Props) {
       const response = await fetch("/api/dashboard", { cache: "no-store" });
       const nextData = (await response.json()) as DashboardSnapshot;
       setData(nextData);
-      setBriefingForm((current) => ({
-        ...current,
-        clientId: nextData.clients[0]?.id ?? current.clientId
-      }));
-      setReviewForm((current) => ({
-        ...current,
-        jobId: nextData.jobs[0]?.id ?? current.jobId
-      }));
     });
   }
 
   return (
-    <div className="page-shell">
-      <section className="hero">
-        <div>
-          <div className="eyebrow">Fábrica de Anúncios</div>
-          <h1>Do briefing à aprovação, num app pronto para GitHub, Vercel e Supabase.</h1>
-          <p>
-            Esta base já organiza clientes, briefings, fila de geração e reviews. O motor Python
-            atual continua preservado no repositório e pode ser conectado à fila de jobs na próxima
-            etapa.
-          </p>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Header do App */}
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <LayoutDashboard className="w-6 h-6 text-indigo-600" />
+          <h1 className="text-xl font-bold tracking-tight">Fábrica de Anúncios</h1>
+          <Badge variant="default" className="ml-2 bg-indigo-50 text-indigo-700 border-indigo-100">
+            {data.mode === 'demo' ? 'Modo Demo' : 'Supabase'}
+          </Badge>
         </div>
-        <div className="hero-stats">
-          <div className="stat">
-            <div className="stat-label">Modo atual</div>
-            <div className="stat-value">{data.mode}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Clientes</div>
-            <div className="stat-value">{data.clients.length}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Briefings</div>
-            <div className="stat-value">{data.briefings.length}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Jobs</div>
-            <div className="stat-value">{data.jobs.length}</div>
-          </div>
+        <div className="flex items-center gap-4 text-sm text-slate-500">
+          <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {data.clients.length} Clientes</span>
+          <span className="flex items-center gap-1"><ClipboardList className="w-4 h-4" /> {data.jobs.length} Jobs</span>
         </div>
-      </section>
+      </header>
 
-      <div className="grid">
-        <div className="stack">
-          <section className="panel">
-            <div className="eyebrow">1. Cliente</div>
-            <h2>Novo cliente</h2>
-            <div className="field">
-              <label>Nome</label>
-              <input
-                value={clientForm.name}
-                onChange={(event) => setClientForm({ ...clientForm, name: event.target.value })}
+      <main className="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Coluna Esquerda: Ações e Formulários */}
+        <div className="lg:col-span-4 space-y-6">
+          <Card className="p-5">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <PlusCircle className="w-5 h-5 text-indigo-600" /> Novo Cliente
+            </h2>
+            <div className="space-y-3">
+              <Input 
+                placeholder="Nome da Empresa" 
+                value={clientForm.name} 
+                onChange={e => setClientForm({...clientForm, name: e.target.value})}
               />
-            </div>
-            <div className="field">
-              <label>Segmento</label>
-              <input
-                value={clientForm.segment}
-                onChange={(event) => setClientForm({ ...clientForm, segment: event.target.value })}
+              <Input 
+                placeholder="Segmento" 
+                value={clientForm.segment} 
+                onChange={e => setClientForm({...clientForm, segment: e.target.value})}
               />
-            </div>
-            <div className="field">
-              <label>Tom da marca</label>
-              <input
-                value={clientForm.brandTone}
-                onChange={(event) => setClientForm({ ...clientForm, brandTone: event.target.value })}
+              <Input 
+                placeholder="Tom da Marca" 
+                value={clientForm.brandTone} 
+                onChange={e => setClientForm({...clientForm, brandTone: e.target.value})}
               />
-            </div>
-            <div className="button-row">
-              <button
-                className="button"
-                disabled={pending}
+              <Button 
+                className="w-full" 
+                disabled={pending || !clientForm.name}
                 onClick={async () => {
                   await postJson("/api/clients", clientForm);
                   setClientForm({ name: "", segment: "", brandTone: "" });
                   refreshSnapshot();
                 }}
               >
-                Criar cliente
-              </button>
+                Cadastrar Cliente
+              </Button>
             </div>
-          </section>
+          </Card>
 
-          <section className="panel">
-            <div className="eyebrow">2. Briefing</div>
-            <h2>Novo job</h2>
-            <div className="field">
-              <label>Cliente</label>
-              <select
+          <Card className="p-5">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <PlayCircle className="w-5 h-5 text-indigo-600" /> Iniciar Novo Job
+            </h2>
+            <div className="space-y-3 text-sm">
+              <select 
+                className="w-full h-10 rounded-md border border-slate-200 bg-white px-3"
                 value={briefingForm.clientId}
-                onChange={(event) => setBriefingForm({ ...briefingForm, clientId: event.target.value })}
+                onChange={e => setBriefingForm({...briefingForm, clientId: e.target.value})}
               >
-                <option value="">Selecione</option>
-                {data.clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
+                <option value="">Selecionar Cliente...</option>
+                {data.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-            </div>
-            <div className="field">
-              <label>Produto</label>
-              <input
+              <Input 
+                placeholder="Nome do Produto" 
                 value={briefingForm.productName}
-                onChange={(event) => setBriefingForm({ ...briefingForm, productName: event.target.value })}
+                onChange={e => setBriefingForm({...briefingForm, productName: e.target.value})}
               />
-            </div>
-            <div className="field">
-              <label>Plataforma</label>
-              <input
-                value={briefingForm.platform}
-                onChange={(event) => setBriefingForm({ ...briefingForm, platform: event.target.value })}
-              />
-            </div>
-            <div className="field">
-              <label>Formato</label>
-              <input
-                value={briefingForm.format}
-                onChange={(event) => setBriefingForm({ ...briefingForm, format: event.target.value })}
-              />
-            </div>
-            <div className="field">
-              <label>Tipo</label>
-              <select
-                value={briefingForm.adType}
-                onChange={(event) =>
-                  setBriefingForm({
-                    ...briefingForm,
-                    adType: event.target.value as "static" | "carousel"
-                  })
-                }
-              >
-                <option value="static">Static</option>
-                <option value="carousel">Carousel</option>
-              </select>
-            </div>
-            <div className="field">
-              <label>Objetivo</label>
-              <input
+              <Input 
+                placeholder="Objetivo (ex: Vendas)" 
                 value={briefingForm.objective}
-                onChange={(event) => setBriefingForm({ ...briefingForm, objective: event.target.value })}
+                onChange={e => setBriefingForm({...briefingForm, objective: e.target.value})}
               />
-            </div>
-            <div className="field">
-              <label>Funil</label>
-              <input
-                value={briefingForm.funnelStage}
-                onChange={(event) => setBriefingForm({ ...briefingForm, funnelStage: event.target.value })}
-              />
-            </div>
-            <div className="field">
-              <label>Foto do produto (opcional)</label>
-              <input
-                value={briefingForm.productImageUrl}
-                onChange={(event) =>
-                  setBriefingForm({ ...briefingForm, productImageUrl: event.target.value })
-                }
-              />
-            </div>
-            <div className="field">
-              <label>Anúncio de referência (opcional)</label>
-              <input
-                value={briefingForm.referenceAdUrl}
-                onChange={(event) =>
-                  setBriefingForm({ ...briefingForm, referenceAdUrl: event.target.value })
-                }
-              />
-            </div>
-            <div className="button-row">
-              <button
-                className="button"
-                disabled={pending}
+              <Button 
+                variant="outline" 
+                className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                disabled={pending || !briefingForm.clientId || !briefingForm.productName}
                 onClick={async () => {
                   await postJson("/api/briefings", briefingForm);
-                  setBriefingForm({
-                    ...briefingForm,
-                    productName: "",
-                    objective: "",
-                    funnelStage: "",
-                    productImageUrl: "",
-                    referenceAdUrl: ""
-                  });
+                  setBriefingForm({...briefingForm, productName: "", objective: ""});
                   refreshSnapshot();
                 }}
               >
-                Criar briefing
-              </button>
+                Gerar Briefing & Job
+              </Button>
             </div>
-          </section>
-
-          <section className="panel">
-            <div className="eyebrow">3. Review</div>
-            <h2>Aprovar ou reprovar</h2>
-            <div className="field">
-              <label>Job</label>
-              <select
-                value={reviewForm.jobId}
-                onChange={(event) => setReviewForm({ ...reviewForm, jobId: event.target.value })}
-              >
-                <option value="">Selecione</option>
-                {data.jobs.map((job) => (
-                  <option key={job.id} value={job.id}>
-                    {job.id.slice(0, 8)} · {job.status}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label>Status</label>
-              <select
-                value={reviewForm.status}
-                onChange={(event) =>
-                  setReviewForm({
-                    ...reviewForm,
-                    status: event.target.value as "approved" | "rejected"
-                  })
-                }
-              >
-                <option value="approved">approved</option>
-                <option value="rejected">rejected</option>
-              </select>
-            </div>
-            <div className="field">
-              <label>Feedback</label>
-              <textarea
-                value={reviewForm.feedback}
-                onChange={(event) => setReviewForm({ ...reviewForm, feedback: event.target.value })}
-              />
-            </div>
-            <div className="field">
-              <label>Tags</label>
-              <input
-                value={reviewForm.reasonTags}
-                onChange={(event) => setReviewForm({ ...reviewForm, reasonTags: event.target.value })}
-              />
-            </div>
-            <div className="button-row">
-              <button
-                className="button"
-                disabled={pending}
-                onClick={async () => {
-                  await postJson("/api/reviews", {
-                    ...reviewForm,
-                    reasonTags: reviewForm.reasonTags
-                      .split(",")
-                      .map((item) => item.trim())
-                      .filter(Boolean)
-                  });
-                  setReviewForm({ ...reviewForm, feedback: "", reasonTags: "" });
-                  refreshSnapshot();
-                }}
-              >
-                Salvar review
-              </button>
-              <button className="button secondary" onClick={() => refreshSnapshot()}>
-                Atualizar painel
-              </button>
-            </div>
-          </section>
+          </Card>
         </div>
 
-        <div className="stack">
-          <section className="panel">
-            <div className="eyebrow">Clientes</div>
-            <h2>Base ativa</h2>
-            <div className="list">
-              {data.clients.length === 0 ? (
-                <div className="empty">Nenhum cliente ainda.</div>
-              ) : (
-                data.clients.map((client) => (
-                  <article className="item" key={client.id}>
-                    <div className="item-top">
-                      <div>
-                        <h3>{client.name}</h3>
-                        <p>{client.segment || "segmento pendente"}</p>
-                      </div>
-                      <span className="pill">{client.brandTone || "tom pendente"}</span>
+        {/* Coluna Direita: Listas de "Coisas Inscritas" */}
+        <div className="lg:col-span-8 space-y-6">
+          
+          {/* Seção de Clientes com Botão de Seleção */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Users className="w-5 h-5" /> Clientes Ativos
+              </h2>
+              <div className="relative w-48">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <Input className="pl-9 h-9 text-xs" placeholder="Buscar cliente..." />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {data.clients.map(client => (
+                <Card 
+                  key={client.id} 
+                  className={cn(
+                    "p-4 hover:border-indigo-300 transition-all cursor-pointer group",
+                    selectedClientId === client.id && "border-indigo-600 bg-indigo-50/30 ring-1 ring-indigo-600"
+                  )}
+                  onClick={() => setSelectedClientId(client.id)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{client.name}</h3>
+                      <p className="text-xs text-slate-500 mt-1">{client.segment}</p>
                     </div>
-                  </article>
-                ))
+                    <Button 
+                      variant="outline" 
+                      className="h-8 w-8 p-0 rounded-full group-hover:bg-indigo-600 group-hover:text-white"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Badge className="bg-slate-100 text-[10px] uppercase">{client.brandTone}</Badge>
+                  </div>
+                </Card>
+              ))}
+              {data.clients.length === 0 && (
+                <div className="col-span-2 py-12 text-center text-slate-400 border-2 border-dashed rounded-lg border-slate-200">
+                  Nenhum cliente cadastrado ainda.
+                </div>
               )}
             </div>
           </section>
 
-          <section className="panel">
-            <div className="eyebrow">Briefings e fila</div>
-            <h2>Operação</h2>
-            <div className="list">
-              {data.jobs.length === 0 ? (
-                <div className="empty">Nenhum job na fila.</div>
-              ) : (
-                data.jobs.map((job) => {
-                  const briefing = data.briefings.find((item) => item.id === job.briefingId);
-                  return (
-                    <article className="item" key={job.id}>
-                      <div className="item-top">
-                        <div>
-                          <h3>{briefing?.productName ?? "Briefing"}</h3>
-                          <p>{job.outputSummary ?? "Sem resumo ainda."}</p>
+          {/* Seção de Jobs na Fila */}
+          <section>
+            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5" /> Fila de Produção
+            </h2>
+            <div className="space-y-3">
+              {data.jobs.map(job => {
+                const briefing = data.briefings.find(b => b.id === job.briefingId);
+                const client = data.clients.find(c => c.id === briefing?.clientId);
+                return (
+                  <Card key={job.id} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        job.status === 'approved' ? "bg-green-100 text-green-600" : 
+                        job.status === 'rejected' ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600 animate-pulse"
+                      )}>
+                        {job.status === 'approved' ? <CheckCircle2 className="w-5 h-5" /> : <PlayCircle className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-sm">{briefing?.productName || "Sem Nome"}</h3>
+                          <span className="text-xs text-slate-400">•</span>
+                          <span className="text-xs font-bold text-slate-600">{client?.name}</span>
                         </div>
-                        <span
-                          className={`pill ${
-                            job.status === "approved"
-                              ? "success"
-                              : job.status === "rejected"
-                                ? "danger"
-                                : ""
-                          }`}
-                        >
-                          {job.status}
-                        </span>
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1 max-w-md">
+                          {job.outputSummary || "Aguardando processamento..."}
+                        </p>
                       </div>
-                      <div className="meta">
-                        <span className="pill">{briefing?.platform ?? "plataforma"}</span>
-                        <span className="pill">{briefing?.adType ?? "tipo"}</span>
-                        <span className="pill">{briefing?.format ?? "formato"}</span>
-                        {briefing?.productImageUrl ? <span className="pill">com foto</span> : null}
-                        {briefing?.referenceAdUrl ? <span className="pill">com referência</span> : null}
-                      </div>
-                    </article>
-                  );
-                })
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant={job.status === 'approved' ? 'success' : job.status === 'rejected' ? 'destructive' : 'default'}>
+                        {job.status}
+                      </Badge>
+                      <Button variant="outline" className="text-xs h-8">Ver Job</Button>
+                    </div>
+                  </Card>
+                );
+              })}
+              {data.jobs.length === 0 && (
+                <div className="py-8 text-center text-slate-400">
+                  Nenhum job em andamento.
+                </div>
               )}
             </div>
           </section>
 
-          <section className="panel">
-            <div className="eyebrow">Reviews</div>
-            <h2>Aprendizado</h2>
-            <div className="list">
-              {data.reviews.length === 0 ? (
-                <div className="empty">Nenhum review salvo ainda.</div>
-              ) : (
-                data.reviews.map((review) => (
-                  <article className="item" key={review.id}>
-                    <div className="item-top">
-                      <div>
-                        <h3>{review.status}</h3>
-                        <p>{review.feedback || "Sem feedback textual."}</p>
-                      </div>
-                      <span className={`pill ${review.status === "approved" ? "success" : "danger"}`}>
-                        {review.status}
-                      </span>
-                    </div>
-                    <div className="meta">
-                      {review.reasonTags.map((tag) => (
-                        <span className="pill" key={tag}>
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
-
-          <div className="footer-note">
-            Esta UI já está pronta para subir no GitHub e conectar à Vercel. Com Supabase configurado,
-            o modo sai de demo e passa a persistir em Postgres.
-          </div>
         </div>
-      </div>
+      </main>
+
+      <footer className="p-6 text-center text-xs text-slate-400 border-t border-slate-200 mt-auto">
+        &copy; {new Date().getFullYear()} Fábrica de Anúncios AI • Tecnologia de Ponta para Performance
+      </footer>
     </div>
   );
 }
