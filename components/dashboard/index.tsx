@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus, ImageIcon, CheckCircle2, UserCircle } from "lucide-react";
+import { RefreshCw, LayoutDashboard, Users, Target, ShieldCheck, Zap, Briefcase, Plus, ImageIcon, CheckCircle2, UserCircle, History, MessageSquare } from "lucide-react";
 import type { DashboardSnapshot } from "@/lib/types";
 import { StatCard } from "./StatCard";
 import { JobCard } from "./JobCard";
@@ -126,13 +126,6 @@ export function Dashboard({ initialData }: Props) {
               <Users size={18} /> {client.name}
             </div>
           ))}
-
-          <div 
-            className="nav-item mt-4 border border-dashed border-[#27272a] hover:border-[var(--accent)]"
-            onClick={() => { setActiveView('general'); setSelectedClientId(null); }}
-          >
-            <Plus size={18} /> Adicionar Marca
-          </div>
         </nav>
       </aside>
 
@@ -268,6 +261,21 @@ export function Dashboard({ initialData }: Props) {
                     </button>
                   </div>
                 </section>
+                
+                <section className="panel">
+                  <div className="eyebrow">Marcas Ativas</div>
+                  <div className="space-y-4">
+                    {data.clients.map(client => (
+                      <div key={client.id} className="flex justify-between items-center p-4 border border-[var(--line)] hover:border-[var(--accent)] cursor-pointer transition-all" onClick={() => { setActiveView('client'); setSelectedClientId(client.id); }}>
+                        <div>
+                          <div className="font-bold">{client.name}</div>
+                          <div className="text-[10px] text-[var(--muted)] uppercase tracking-widest">{client.segment}</div>
+                        </div>
+                        <span className="pill text-[9px]">{client.brandTone}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
               </div>
 
               <div className="stack">
@@ -294,6 +302,35 @@ export function Dashboard({ initialData }: Props) {
                       />
                     ))
                   )}
+                </section>
+
+                <section className="panel">
+                  <div className="eyebrow flex items-center gap-2"><History size={12} /> Memória Criativa Global</div>
+                  <div className="space-y-4 mt-6">
+                    {data.reviews.length === 0 ? (
+                      <div className="text-center py-10 text-[var(--muted)] italic">Nenhuma decisão registrada.</div>
+                    ) : (
+                      data.reviews.slice(0, 5).map(review => {
+                        const job = data.jobs.find(j => j.id === review.jobId);
+                        const briefing = data.briefings.find(b => b.id === job?.briefingId);
+                        const client = data.clients.find(c => c.id === briefing?.clientId);
+                        return (
+                          <div key={review.id} className="p-4 bg-[var(--bg)] border-l-4 border-[var(--ink)]">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-bold text-xs uppercase tracking-widest">{client?.name}</span>
+                              <span className={`pill ${review.status === 'approved' ? 'success' : 'danger'}`}>{review.status}</span>
+                            </div>
+                            <p className="text-xs italic">"{review.feedback || 'Aprovação sem comentários.'}"</p>
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {review.reasonTags.map(tag => (
+                                <span key={tag} className="text-[8px] uppercase bg-white px-1.5 py-0.5 border border-[var(--line)]">{tag}</span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </section>
               </div>
             </div>
