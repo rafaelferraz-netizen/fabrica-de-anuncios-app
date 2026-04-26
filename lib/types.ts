@@ -15,6 +15,9 @@ export type BriefingRecord = {
   adType: "static" | "carousel";
   objective: string;
   funnelStage: string;
+  targetAudience?: string;
+  creativeAngle?: string;
+  brandVoice?: string;
   productImageUrl?: string;
   referenceAdUrl?: string;
   createdAt: string;

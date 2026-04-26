@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { RefreshCw, History, Maximize2, Download } from "lucide-react";
+import { RefreshCw, History, Maximize2, Download, ShieldCheck, Target, Zap } from "lucide-react";
 import type { DashboardSnapshot } from "@/lib/types";
 import { StatCard } from "./StatCard";
 import { JobCard } from "./JobCard";
@@ -10,19 +10,17 @@ import { ImageModal } from "./ImageModal";
 type Props = { initialData: DashboardSnapshot };
 
 const CLIENT_SEGMENTS = ["Moda", "Beleza", "Estética", "Saúde", "E-commerce", "Infoproduto", "Serviço local", "Outro"] as const;
-const BRAND_TONES = ["Premium", "Popular", "Confiável", "Ousado", "Clean", "Técnico"] as const;
-const AD_TYPES = ["static", "carousel"] as const;
-const OBJECTIVES = ["Reconhecimento", "Engajamento", "Leads", "Conversão", "Remarketing"] as const;
+const OBJECTIVES = ["Conversão", "Leads", "Engajamento", "Reconhecimento"] as const;
 const FUNNEL_STAGES = ["Topo", "Meio", "Fundo"] as const;
+const AUDIENCES = ["Frio (Não conhece)", "Morno (Já viu)", "Quente (Pronto p/ comprar)"] as const;
+const ANGLES = ["Transformação", "Autoridade", "Prova Social", "Escassez", "Curiosidade"] as const;
+const VOICES = ["Inspirador", "Urgente", "Técnico", "Casual/UGC", "Agressivo (Oferta)"] as const;
 
-// Mapeamento inteligente de Posicionamento (Plataforma + Formato)
 const PLACEMENTS = {
   "Instagram Feed (4:5)": { platform: "Instagram", format: "4:5 (1080x1350px)" },
   "Instagram Stories (9:16)": { platform: "Instagram", format: "9:16 (1080x1920px)" },
   "Instagram Square (1:1)": { platform: "Instagram", format: "1:1 (1080x1080px)" },
-  "Facebook Feed (1:1)": { platform: "Facebook", format: "1:1 (1080x1080px)" },
   "TikTok Ads (9:16)": { platform: "TikTok", format: "9:16 (1080x1920px)" },
-  "LinkedIn Post (1:1)": { platform: "LinkedIn", format: "1:1 (1080x1080px)" },
 } as const;
 
 type PlacementKey = keyof typeof PLACEMENTS;
@@ -51,7 +49,7 @@ export function Dashboard({ initialData }: Props) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const [clientForm, setClientForm] = useState({ name: "", segment: CLIENT_SEGMENTS[0], brandTone: BRAND_TONES[0] });
+  const [clientForm, setClientForm] = useState({ name: "", segment: CLIENT_SEGMENTS[0], brandTone: "Premium" });
   
   const [selectedPlacement, setSelectedPlacement] = useState<PlacementKey>("Instagram Feed (4:5)");
   
@@ -60,9 +58,12 @@ export function Dashboard({ initialData }: Props) {
     productName: "",
     platform: PLACEMENTS["Instagram Feed (4:5)"].platform,
     format: PLACEMENTS["Instagram Feed (4:5)"].format,
-    adType: AD_TYPES[0],
-    objective: OBJECTIVES[2],
+    adType: "static" as const,
+    objective: OBJECTIVES[0],
     funnelStage: FUNNEL_STAGES[0],
+    targetAudience: AUDIENCES[0],
+    creativeAngle: ANGLES[0],
+    brandVoice: VOICES[0],
     productImageUrl: "",
     referenceAdUrl: ""
   });
@@ -70,11 +71,7 @@ export function Dashboard({ initialData }: Props) {
   const handlePlacementChange = (key: PlacementKey) => {
     setSelectedPlacement(key);
     const config = PLACEMENTS[key];
-    setBriefingForm(prev => ({
-      ...prev,
-      platform: config.platform,
-      format: config.format
-    }));
+    setBriefingForm(prev => ({ ...prev, platform: config.platform, format: config.format }));
   };
 
   const [reviewDrafts, setReviewDrafts] = useState<Record<string, { feedback: string; tags: string[] }>>({});
@@ -106,12 +103,11 @@ export function Dashboard({ initialData }: Props) {
         <div>
           <div className="eyebrow">Fábrica de Anúncios</div>
           <h1>Direção criativa & Performance editorial.</h1>
-          <p>Geração de criativos que não parecem IA. Briefing técnico, curadoria visual e aprovação em tempo real para agências que prezam pela estética.</p>
+          <p>Briefing técnico v4 com prompts estratégicos ocultos para geração de criativos de alta conversão.</p>
         </div>
         <div className="hero-stats">
           <StatCard label="Modo" value={data.mode} />
           <StatCard label="Clientes" value={data.clients.length} />
-          <StatCard label="Briefings" value={data.briefings.length} />
           <StatCard label="Jobs" value={data.jobs.length} />
         </div>
       </header>
@@ -121,75 +117,76 @@ export function Dashboard({ initialData }: Props) {
           <section className="panel">
             <div className="eyebrow">Novo Cliente</div>
             <div className="field">
-              <label>Nome da Marca</label>
-              <input value={clientForm.name} onChange={e => setClientForm({...clientForm, name: e.target.value})} />
+              <label>Marca</label>
+              <input value={clientForm.name} onChange={e => setClientForm({...clientForm, name: e.target.value})} placeholder="Ex: Spy Eyewear" />
             </div>
-            <div className="field">
-              <label>Segmento</label>
-              <div className="selection-group">
-                {CLIENT_SEGMENTS.map(s => (
-                  <button key={s} className={`choice ${clientForm.segment === s ? 'active' : ''}`} onClick={() => setClientForm({...clientForm, segment: s})}>{s}</button>
-                ))}
-              </div>
-            </div>
-            <button className="button w-full" disabled={pending || !clientForm.name} onClick={async () => { await postJson("/api/clients", clientForm); setClientForm({name: "", segment: CLIENT_SEGMENTS[0], brandTone: BRAND_TONES[0]}); refreshSnapshot(); }}>Criar Cliente</button>
+            <button className="button w-full" disabled={pending || !clientForm.name} onClick={async () => { await postJson("/api/clients", clientForm); setClientForm({name: "", segment: CLIENT_SEGMENTS[0], brandTone: "Premium"}); refreshSnapshot(); }}>Salvar Marca</button>
           </section>
 
           <section className="panel">
-            <div className="eyebrow">Briefing Criativo</div>
-            <div className="field">
-              <label>Cliente</label>
-              <select value={briefingForm.clientId} onChange={e => setBriefingForm({...briefingForm, clientId: e.target.value})}>
-                {data.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label>Produto</label>
-              <input value={briefingForm.productName} onChange={e => setBriefingForm({...briefingForm, productName: e.target.value})} />
-            </div>
+            <div className="eyebrow">Briefing Estratégico</div>
             
-            <div className="field">
-              <label>Posicionamento (Canal & Formato)</label>
-              <select 
-                value={selectedPlacement} 
-                onChange={e => handlePlacementChange(e.target.value as PlacementKey)}
-                className="font-bold border-2 border-[var(--ink)]"
-              >
-                {(Object.keys(PLACEMENTS) as PlacementKey[]).map(key => (
-                  <option key={key} value={key}>{key}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="field">
-              <label>Assets (Upload)</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button className={`dropzone ${briefingForm.productImageUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-p')?.click()}>
-                  {briefingForm.productImageUrl ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <img src={briefingForm.productImageUrl} className="w-10 h-10 object-cover rounded" />
-                      <span className="text-[10px] font-bold text-[var(--accent)]">Trocar</span>
-                    </div>
-                  ) : "+ Foto Produto"}
-                </button>
-                <button className={`dropzone ${briefingForm.referenceAdUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-r')?.click()}>
-                  {briefingForm.referenceAdUrl ? (
-                    <div className="flex flex-col items-center gap-1">
-                      <img src={briefingForm.referenceAdUrl} className="w-10 h-10 object-cover rounded" />
-                      <span className="text-[10px] font-bold text-[var(--accent)]">Ref. OK</span>
-                    </div>
-                  ) : "+ Referência"}
-                </button>
-                <input id="up-p" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'product-images'); setBriefingForm({...briefingForm, productImageUrl: r.url}); }}} />
-                <input id="up-r" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'reference-ads'); setBriefingForm({...briefingForm, referenceAdUrl: r.url}); }}} />
+            <div className="space-y-6">
+              <div className="field">
+                <label>Cliente</label>
+                <select value={briefingForm.clientId} onChange={e => setBriefingForm({...briefingForm, clientId: e.target.value})}>
+                  {data.clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
+
+              <div className="field">
+                <label>Produto</label>
+                <input value={briefingForm.productName} onChange={e => setBriefingForm({...briefingForm, productName: e.target.value})} placeholder="Ex: Óculos Spy 45" />
+              </div>
+
+              <div className="field">
+                <label className="flex items-center gap-2"><Target size={14} className="text-[var(--accent)]" /> Posicionamento</label>
+                <select value={selectedPlacement} onChange={e => handlePlacementChange(e.target.value as PlacementKey)}>
+                  {(Object.keys(PLACEMENTS) as PlacementKey[]).map(key => <option key={key} value={key}>{key}</option>)}
+                </select>
+              </div>
+
+              <div className="field">
+                <label className="flex items-center gap-2"><ShieldCheck size={14} className="text-[var(--accent)]" /> Público & Ângulo</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <select value={briefingForm.targetAudience} onChange={e => setBriefingForm({...briefingForm, targetAudience: e.target.value})}>
+                    {AUDIENCES.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  <select value={briefingForm.creativeAngle} onChange={e => setBriefingForm({...briefingForm, creativeAngle: e.target.value})}>
+                    {ANGLES.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="field">
+                <label className="flex items-center gap-2"><Zap size={14} className="text-[var(--accent)]" /> Voz da Marca</label>
+                <select value={briefingForm.brandVoice} onChange={e => setBriefingForm({...briefingForm, brandVoice: e.target.value})}>
+                  {VOICES.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+
+              <div className="field">
+                <label>Assets</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className={`dropzone ${briefingForm.productImageUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-p')?.click()}>
+                    {briefingForm.productImageUrl ? "Produto OK" : "+ Foto"}
+                  </button>
+                  <button className={`dropzone ${briefingForm.referenceAdUrl ? 'filled' : ''}`} onClick={() => document.getElementById('up-r')?.click()}>
+                    {briefingForm.referenceAdUrl ? "Ref OK" : "+ Ref"}
+                  </button>
+                  <input id="up-p" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'product-images'); setBriefingForm({...briefingForm, productImageUrl: r.url}); }}} />
+                  <input id="up-r" type="file" hidden onChange={async e => { const f = e.target.files?.[0]; if(f){ const r = await uploadAsset(f, 'reference-ads'); setBriefingForm({...briefingForm, referenceAdUrl: r.url}); }}} />
+                </div>
+              </div>
+
+              <button className="button w-full" disabled={pending || !briefingForm.productName} onClick={async () => { await postJson("/api/briefings", briefingForm); setBriefingForm({...briefingForm, productName: "", productImageUrl: "", referenceAdUrl: ""}); refreshSnapshot(); }}>
+                Disparar Geração Inteligente
+              </button>
             </div>
-            <button className="button w-full" disabled={pending || !briefingForm.productName} onClick={async () => { await postJson("/api/briefings", briefingForm); setBriefingForm({...briefingForm, productName: "", productImageUrl: "", referenceAdUrl: ""}); refreshSnapshot(); }}>Iniciar Geração</button>
           </section>
         </div>
 
         <div className="stack">
-          {/* ... resto do componente ... */}
           <section className="panel">
             <div className="flex justify-between items-center mb-6 border-b border-[var(--line)] pb-4">
               <div className="eyebrow m-0">Fila de Produção</div>
@@ -213,40 +210,6 @@ export function Dashboard({ initialData }: Props) {
                 />
               ))
             )}
-          </section>
-
-          <section className="panel">
-            <div className="flex justify-between items-center mb-6 border-b border-[var(--line)] pb-4">
-              <div className="eyebrow m-0">Histórico de Performance</div>
-              <History size={14} className="text-[var(--muted)]" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {data.reviews.map(review => {
-                const job = data.jobs.find(j => j.id === review.jobId);
-                return (
-                  <div key={review.id} className="p-4 border border-[var(--line)] bg-white/40 group relative">
-                    <div className="flex justify-between mb-3">
-                      <span className={`pill ${review.status === 'approved' ? 'success' : 'danger'}`}>{review.status}</span>
-                      <span className="text-[10px] text-[var(--muted)]">{new Date(review.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    {job?.imageUrl && (
-                      <div className="relative aspect-video mb-3 overflow-hidden border border-[var(--line)]">
-                        <img src={job.imageUrl} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all cursor-pointer" onClick={() => setZoomedImage(job.imageUrl!)} />
-                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setZoomedImage(job.imageUrl!)} className="bg-white p-1.5 shadow-md"><Maximize2 size={12} /></button>
-                        </div>
-                      </div>
-                    )}
-                    <p className="text-xs italic font-serif leading-relaxed mb-3">"{review.feedback || 'Sem comentários'}"</p>
-                    <div className="flex flex-wrap gap-1">
-                      {review.reasonTags.map(tag => (
-                        <span key={tag} className="text-[9px] uppercase tracking-tighter bg-gray-100 px-1">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </section>
         </div>
       </div>
