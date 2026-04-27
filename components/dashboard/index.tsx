@@ -43,7 +43,22 @@ export function Dashboard({ initialData }: Props) {
   const [pending, startTransition] = useTransition();
 
   const [clientForm, setClientForm] = useState({ name: "", segment: CLIENT_SEGMENTS[0], brandTone: "Premium" });
-  const [briefingForm, setBriefingForm] = useState({
+  const [briefingForm, setBriefingForm] = useState<{
+    clientId: string;
+    productName: string;
+    platform: string;
+    format: string;
+    adType: "static";
+    objective: string;
+    funnelStage: string;
+    targetAudience: string;
+    creativeAngle: string;
+    brandVoice: string;
+    offer: string;
+    userPrompt: string;
+    productImageUrl: string;
+    referenceAdUrl: string;
+  }>({
     clientId: initialData.clients[0]?.id ?? "",
     productName: "",
     platform: PLACEMENTS["Instagram Feed (4:5)"].platform,
@@ -54,6 +69,8 @@ export function Dashboard({ initialData }: Props) {
     targetAudience: AUDIENCES[0],
     creativeAngle: ANGLES[0],
     brandVoice: VOICES[0],
+    offer: "",
+    userPrompt: "",
     productImageUrl: "",
     referenceAdUrl: ""
   });
@@ -184,11 +201,20 @@ export function Dashboard({ initialData }: Props) {
                     </div>
 
                     <div className="field">
-                      <label>Produto/Oferta</label>
+                      <label>Produto</label>
                       <input 
                         value={briefingForm.productName} 
                         onChange={e => setBriefingForm({...briefingForm, productName: e.target.value})} 
                         placeholder="Ex: Tênis Air Max v2"
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label>Oferta</label>
+                      <input
+                        value={briefingForm.offer}
+                        onChange={e => setBriefingForm({...briefingForm, offer: e.target.value})}
+                        placeholder="Ex: R$ 340,00 ou 6x de R$ 56,67 sem juros"
                       />
                     </div>
 
@@ -248,12 +274,28 @@ export function Dashboard({ initialData }: Props) {
                       </div>
                     </div>
 
+                    <div className="field">
+                      <label>Descreva sua ideia para o anúncio</label>
+                      <textarea
+                        value={briefingForm.userPrompt}
+                        onChange={e => setBriefingForm({...briefingForm, userPrompt: e.target.value})}
+                        placeholder="Exemplo: Quero um anúncio premium para esse produto, usando a referência como inspiração visual. Precisa destacar a oferta e parecer um criativo forte para Meta Ads."
+                      />
+                    </div>
+
                     <button 
                       className="button w-full" 
-                      disabled={pending || !briefingForm.productName}
+                      disabled={pending || !briefingForm.productName || !briefingForm.userPrompt.trim()}
                       onClick={async () => {
                         await postJson("/api/briefings", briefingForm);
-                        setBriefingForm(prev => ({ ...prev, productName: "", productImageUrl: "", referenceAdUrl: "" }));
+                        setBriefingForm(prev => ({
+                          ...prev,
+                          productName: "",
+                          offer: "",
+                          userPrompt: "",
+                          productImageUrl: "",
+                          referenceAdUrl: ""
+                        }));
                         refreshSnapshot();
                       }}
                     >

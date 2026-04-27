@@ -67,6 +67,16 @@ export async function createDemoBriefing(input: {
   adType: "static" | "carousel";
   objective: string;
   funnelStage: string;
+  targetAudience?: string;
+  creativeAngle?: string;
+  brandVoice?: string;
+  offer?: string;
+  audience?: string;
+  angle?: string;
+  voice?: string;
+  userPrompt?: string;
+  productImageDescription?: string;
+  referenceImageDescription?: string;
   productImageUrl?: string;
   referenceAdUrl?: string;
 }): Promise<{ briefing: BriefingRecord; job: GenerationJobRecord }> {
@@ -80,6 +90,16 @@ export async function createDemoBriefing(input: {
     adType: input.adType,
     objective: input.objective,
     funnelStage: input.funnelStage,
+    targetAudience: input.targetAudience,
+    creativeAngle: input.creativeAngle,
+    brandVoice: input.brandVoice,
+    offer: input.offer,
+    audience: input.audience,
+    angle: input.angle,
+    voice: input.voice,
+    userPrompt: input.userPrompt,
+    productImageDescription: input.productImageDescription,
+    referenceImageDescription: input.referenceImageDescription,
     productImageUrl: input.productImageUrl,
     referenceAdUrl: input.referenceAdUrl,
     createdAt: new Date().toISOString()

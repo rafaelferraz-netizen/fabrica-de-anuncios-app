@@ -13,9 +13,27 @@ export async function POST(request: NextRequest) {
       adType: "static" | "carousel";
       objective: string;
       funnelStage: string;
+      targetAudience?: string;
+      creativeAngle?: string;
+      brandVoice?: string;
+      offer?: string;
+      audience?: string;
+      angle?: string;
+      voice?: string;
+      userPrompt?: string;
+      productImageDescription?: string;
+      referenceImageDescription?: string;
       productImageUrl?: string;
       referenceAdUrl?: string;
     };
+
+    if (!body.userPrompt?.trim()) {
+      return NextResponse.json(
+        { error: "userPrompt é obrigatório. Toda geração precisa passar pelo Creative Refiner." },
+        { status: 400 }
+      );
+    }
+
     const result = await createBriefingRecord(body);
     try {
       await updateGenerationJob({

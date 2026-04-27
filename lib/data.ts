@@ -150,6 +150,16 @@ export async function createBriefingRecord(input: {
   adType: "static" | "carousel";
   objective: string;
   funnelStage: string;
+  targetAudience?: string;
+  creativeAngle?: string;
+  brandVoice?: string;
+  offer?: string;
+  audience?: string;
+  angle?: string;
+  voice?: string;
+  userPrompt?: string;
+  productImageDescription?: string;
+  referenceImageDescription?: string;
   productImageUrl?: string;
   referenceAdUrl?: string;
 }) {
@@ -214,6 +224,16 @@ export async function createBriefingRecord(input: {
       adType: briefing.ad_type,
       objective: briefing.objective,
       funnelStage: briefing.funnel_stage,
+      targetAudience: input.targetAudience,
+      creativeAngle: input.creativeAngle,
+      brandVoice: input.brandVoice,
+      offer: input.offer,
+      audience: input.audience,
+      angle: input.angle,
+      voice: input.voice,
+      userPrompt: input.userPrompt,
+      productImageDescription: input.productImageDescription,
+      referenceImageDescription: input.referenceImageDescription,
       productImageUrl: briefing.product_image_url ?? undefined,
       referenceAdUrl: briefing.reference_ad_url ?? undefined,
       createdAt: briefing.created_at

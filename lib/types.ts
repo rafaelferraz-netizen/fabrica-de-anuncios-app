@@ -18,6 +18,13 @@ export type BriefingRecord = {
   targetAudience?: string;
   creativeAngle?: string;
   brandVoice?: string;
+  offer?: string;
+  audience?: string;
+  angle?: string;
+  voice?: string;
+  userPrompt?: string;
+  productImageDescription?: string;
+  referenceImageDescription?: string;
   productImageUrl?: string;
   referenceAdUrl?: string;
   createdAt: string;

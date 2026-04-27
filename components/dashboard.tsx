@@ -16,6 +16,8 @@ type FormatOption = (typeof FORMATS)[number];
 type AdType = (typeof AD_TYPES)[number];
 type Objective = (typeof OBJECTIVES)[number];
 type FunnelStage = (typeof FUNNEL_STAGES)[number];
+type Audience = (typeof AUDIENCES)[number];
+type CreativeAngle = (typeof CREATIVE_ANGLES)[number];
 
 const CLIENT_SEGMENTS = [
   "Moda",
@@ -36,6 +38,8 @@ const FORMATS = ["1:1 (1080x1080px)", "4:5 (1080x1350px)", "9:16 (1080x1920px)"]
 const AD_TYPES = ["static", "carousel"] as const;
 const OBJECTIVES = ["Reconhecimento", "Engajamento", "Leads", "Conversão", "Remarketing"] as const;
 const FUNNEL_STAGES = ["Topo", "Meio", "Fundo"] as const;
+const AUDIENCES = ["Frio", "Morno", "Quente"] as const;
+const CREATIVE_ANGLES = ["Autoridade", "Oferta", "Desejo", "Prova social", "Benefício", "Urgência"] as const;
 const REVIEW_TAGS = [
   "genérico",
   "sem cara da marca",
@@ -254,6 +258,11 @@ export function Dashboard({ initialData }: Props) {
     adType: AdType;
     objective: Objective;
     funnelStage: FunnelStage;
+    offer: string;
+    audience: Audience;
+    angle: CreativeAngle;
+    voice: BrandTone;
+    userPrompt: string;
     productImageUrl: string;
     referenceAdUrl: string;
   }>({
@@ -264,6 +273,11 @@ export function Dashboard({ initialData }: Props) {
     adType: AD_TYPES[0],
     objective: OBJECTIVES[2],
     funnelStage: FUNNEL_STAGES[0],
+    offer: "",
+    audience: AUDIENCES[0],
+    angle: CREATIVE_ANGLES[0],
+    voice: BRAND_TONES[0],
+    userPrompt: "",
     productImageUrl: "",
     referenceAdUrl: ""
   });
@@ -441,6 +455,32 @@ export function Dashboard({ initialData }: Props) {
               value={briefingForm.funnelStage}
               onChange={(funnelStage) => setBriefingForm({ ...briefingForm, funnelStage })}
             />
+            <div className="field">
+              <label>Oferta</label>
+              <input
+                value={briefingForm.offer}
+                onChange={(event) => setBriefingForm({ ...briefingForm, offer: event.target.value })}
+                placeholder="Ex.: R$ 340,00 ou 6x de R$ 56,67 sem juros"
+              />
+            </div>
+            <SelectionGroup
+              label="Público"
+              options={AUDIENCES}
+              value={briefingForm.audience}
+              onChange={(audience) => setBriefingForm({ ...briefingForm, audience })}
+            />
+            <SelectionGroup
+              label="Ângulo"
+              options={CREATIVE_ANGLES}
+              value={briefingForm.angle}
+              onChange={(angle) => setBriefingForm({ ...briefingForm, angle })}
+            />
+            <SelectionGroup
+              label="Voz"
+              options={BRAND_TONES}
+              value={briefingForm.voice}
+              onChange={(voice) => setBriefingForm({ ...briefingForm, voice })}
+            />
             <AssetDropzone
               label="Foto do produto (opcional)"
               hint="Solte uma imagem local ou arraste um link de imagem para usar como base."
@@ -465,15 +505,30 @@ export function Dashboard({ initialData }: Props) {
               }}
               onClear={() => setBriefingForm((current) => ({ ...current, referenceAdUrl: "" }))}
             />
+            <div className="field">
+              <label>Descreva sua ideia para o anúncio</label>
+              <textarea
+                value={briefingForm.userPrompt}
+                onChange={(event) => setBriefingForm({ ...briefingForm, userPrompt: event.target.value })}
+                placeholder="Exemplo: Quero um anúncio premium para esse produto, usando a referência como inspiração visual. Precisa destacar a oferta e parecer um criativo forte para Meta Ads."
+              />
+            </div>
             <div className="button-row">
               <button
                 className="button"
-                disabled={pending || !briefingForm.clientId || !briefingForm.productName.trim()}
+                disabled={
+                  pending ||
+                  !briefingForm.clientId ||
+                  !briefingForm.productName.trim() ||
+                  !briefingForm.userPrompt.trim()
+                }
                 onClick={async () => {
                   await postJson("/api/briefings", briefingForm);
                   setBriefingForm((current) => ({
                     ...current,
                     productName: "",
+                    offer: "",
+                    userPrompt: "",
                     productImageUrl: "",
                     referenceAdUrl: ""
                   }));
